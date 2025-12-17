@@ -1,0 +1,1 @@
+{"img_size": 224, "resize": 256, "num_classes": 101, "arch": "efficientnet_b0"}
