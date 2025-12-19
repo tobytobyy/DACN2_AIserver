@@ -5,27 +5,16 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="be193d1f-85df-4837-b486-091dc6c94689" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.gitlint" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.gitmessage.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/DACN2_AIserver.iml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/copilot.data.migration.agent.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/copilot.data.migration.ask.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/copilot.data.migration.ask2agent.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/copilot.data.migration.edit.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/profiles_settings.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/prettier.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.pre-commit-config.yaml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/artifacts/best.pt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/artifacts/food101_classes.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/artifacts/model_config.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/serve/app/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/serve/app/inference.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/serve/app/main.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/serve/requirements.txt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/serve/app/api/routes_chat.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/serve/app/api/routes_food.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/serve/app/core/groq_client.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/serve/app/core/prompts.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/serve/app/core/settings.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/serve/app/schemas/chat.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/serve/app/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/serve/app/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/serve/app/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/serve/app/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/serve/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/serve/requirements.txt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -62,6 +51,7 @@
   <component name="PropertiesComponent">{
   &quot;keyToString&quot;: {
     &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;Python.main.executor&quot;: &quot;Run&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
@@ -78,6 +68,7 @@
 }</component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/serve/app" />
       <recent name="$PROJECT_DIR$/artifacts" />
     </key>
   </component>
@@ -98,12 +89,19 @@
       <updated>1765908376867</updated>
       <workItem from="1765908377938" duration="2438000" />
       <workItem from="1765945970816" duration="2260000" />
-      <workItem from="1765948645247" duration="3404000" />
+      <workItem from="1765948645247" duration="4091000" />
+      <workItem from="1765954184237" duration="265000" />
+      <workItem from="1765960984472" duration="73000" />
+      <workItem from="1765962444469" duration="2109000" />
+      <workItem from="1766066573552" duration="7253000" />
     </task>
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="com.intellij.coverage.CoverageDataManagerImpl">
+    <SUITE FILE_PATH="coverage/DACN2_AIserver$main.coverage" NAME="main Coverage Results" MODIFIED="1765963486547" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/serve/app" />
   </component>
   <component name="github-copilot-workspace">
     <instructionFileLocations>
