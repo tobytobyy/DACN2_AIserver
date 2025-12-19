@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional, Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 Role = Literal["system", "user", "assistant"]
 
@@ -23,4 +23,4 @@ class ChatMessageRequest(BaseModel):
 class ChatMessageResponse(BaseModel):
     session_id: str
     answer: str
-    meta: Dict[str, Any] = {}
+    meta: Dict[str, Any] = Field(default_factory=dict)

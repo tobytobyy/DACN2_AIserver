@@ -3,15 +3,14 @@ from __future__ import annotations
 import io
 import json
 import time
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 from PIL import Image
-from app.core.groq_client import groq_client
+from app.core.groq_client import call_groq_chat
 from app.core.prompts import SYSTEM_PROMPT
-from app.core.settings import settings
 from app.inference import (
     predict as food_predict,
-)  # existing food model (MVP image findings)
+)  # MVP image findings via existing food model
 from app.schemas.chat import ChatMessageRequest, ChatMessageResponse
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 
@@ -57,7 +56,7 @@ def _normalize_history(raw_history: Any) -> Optional[List[Dict[str, str]]]:
         )
 
     out: List[Dict[str, str]] = []
-    for i, item in enumerate(raw_history):
+    for item in raw_history:
         if not isinstance(item, dict):
             continue
         role = item.get("role")
@@ -67,6 +66,7 @@ def _normalize_history(raw_history: Any) -> Optional[List[Dict[str, str]]]:
         if not isinstance(content, str) or not content.strip():
             continue
         out.append({"role": role, "content": content.strip()})
+
     return out or None
 
 
@@ -98,7 +98,10 @@ def _build_messages(
         msgs.append(
             {
                 "role": "system",
-                "content": f"Conversation summary (provided by server): {conversation_summary.strip()}",
+                "content": (
+                    "Conversation summary (provided by server): "
+                    f"{conversation_summary.strip()}"
+                ),
             }
         )
 
@@ -122,66 +125,6 @@ def _build_messages(
 
     msgs.append({"role": "user", "content": user_text})
     return msgs
-
-
-# ---------------------------
-# Helpers: Groq call (retry/timeout) + meta
-# ---------------------------
-
-
-def _call_groq_with_retry(
-    messages: List[Dict[str, str]],
-    *,
-    temperature: float = 0.3,
-    max_retries: int = 2,
-    timeout_s: int = 20,
-) -> Tuple[str, Dict[str, Any]]:
-    """
-    Calls Groq with simple retry/backoff.
-    Returns (answer, meta)
-    """
-    client = groq_client()
-    last_err: Optional[Exception] = None
-    t0 = time.time()
-
-    for attempt in range(max_retries + 1):
-        try:
-            resp = client.chat.completions.create(
-                model=settings.groq_model,
-                messages=messages,
-                temperature=temperature,
-                timeout=timeout_s,
-            )
-            answer = resp.choices[0].message.content or ""
-
-            meta: Dict[str, Any] = {
-                "model": settings.groq_model,
-                "latency_ms": int((time.time() - t0) * 1000),
-                "attempts": attempt + 1,
-            }
-
-            # Best-effort token usage if available (depends on SDK/provider)
-            usage = getattr(resp, "usage", None)
-            if usage:
-                try:
-                    meta["usage"] = {
-                        "prompt_tokens": getattr(usage, "prompt_tokens", None),
-                        "completion_tokens": getattr(usage, "completion_tokens", None),
-                        "total_tokens": getattr(usage, "total_tokens", None),
-                    }
-                except Exception:
-                    pass
-
-            return answer, meta
-
-        except Exception as e:
-            last_err = e
-            if attempt < max_retries:
-                time.sleep(0.8 * (attempt + 1))
-            else:
-                raise HTTPException(
-                    status_code=502, detail=f"Groq call failed: {str(last_err)}"
-                )
 
 
 # ---------------------------
@@ -211,7 +154,8 @@ def chat_message(req: ChatMessageRequest) -> ChatMessageResponse:
         locale=req.locale or "vi",
     )
 
-    answer, llm_meta = _call_groq_with_retry(messages)
+    # Canonical Groq call (retry/timeout/meta live in groq_client.py)
+    answer, llm_meta = call_groq_chat(messages=messages)
 
     meta: Dict[str, Any] = {
         **llm_meta,
@@ -270,7 +214,7 @@ async def chat_image(
     # (If later you add general vision model, replace this block)
     try:
         preds = food_predict(img, top_k=3)
-        image_findings = {
+        image_findings: Dict[str, Any] = {
             "type": "food_classification",
             "food_predictions": preds,
             "image_latency_ms": int((time.time() - t_img0) * 1000),
@@ -293,7 +237,7 @@ async def chat_image(
         locale=locale or "vi",
     )
 
-    answer, llm_meta = _call_groq_with_retry(messages)
+    answer, llm_meta = call_groq_chat(messages=messages)
 
     meta: Dict[str, Any] = {
         **llm_meta,
