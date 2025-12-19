@@ -7,3 +7,4 @@ timm
 python-multipart
 openai
 python-dotenv
+pydantic-settings

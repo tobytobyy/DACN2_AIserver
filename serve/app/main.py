@@ -1,3 +1,4 @@
+from app.api.routes_chat import router as chat_router
 from app.api.routes_food import router as food_router
 from fastapi import FastAPI
 
@@ -9,5 +10,5 @@ def health():
     return {"status": "ok"}
 
 
-# Giữ nguyên đường dẫn public: /v1/food:predict
 app.include_router(food_router, prefix="/v1")
+app.include_router(chat_router, prefix="/v1")

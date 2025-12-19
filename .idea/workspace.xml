@@ -4,18 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="be193d1f-85df-4837-b486-091dc6c94689" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/serve/app/api/routes_chat.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/serve/app/api/routes_food.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/serve/app/core/groq_client.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/serve/app/core/prompts.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/serve/app/core/settings.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/serve/app/schemas/chat.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/serve/app/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/serve/app/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/serve/app/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/serve/app/main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/serve/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/serve/requirements.txt" afterDir="false" />
-    </list>
+    <list default="true" id="be193d1f-85df-4837-b486-091dc6c94689" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -93,7 +82,7 @@
       <workItem from="1765954184237" duration="265000" />
       <workItem from="1765960984472" duration="73000" />
       <workItem from="1765962444469" duration="2109000" />
-      <workItem from="1766066573552" duration="7253000" />
+      <workItem from="1766066573552" duration="12275000" />
     </task>
     <servers />
   </component>
