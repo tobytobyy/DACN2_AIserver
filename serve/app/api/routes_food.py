@@ -3,13 +3,14 @@ import time
 
 from PIL import Image
 from app.core.state import model_state
+from app.core.uploads import validate_content_type, read_upload_limited
 from app.inference import predict_with
 from fastapi import APIRouter, UploadFile, File, HTTPException
 
 router = APIRouter()
 
 
-@router.post("/food:predict")
+@router.post("/food/predict")
 async def food_predict(image: UploadFile = File(...), top_k: int = 3):
     t0 = time.time()
 
@@ -24,7 +25,9 @@ async def food_predict(image: UploadFile = File(...), top_k: int = 3):
     ):
         raise HTTPException(status_code=503, detail="Model not loaded")
 
-    img_bytes = await image.read()
+    validate_content_type(image)
+    img_bytes = await read_upload_limited(image)
+
     try:
         img = Image.open(io.BytesIO(img_bytes)).convert("RGB")
     except Exception as e:

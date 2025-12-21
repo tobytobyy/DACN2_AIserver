@@ -9,6 +9,7 @@ from PIL import Image
 from app.core.groq_client import call_groq_chat
 from app.core.prompts import SYSTEM_PROMPT
 from app.core.state import model_state
+from app.core.uploads import validate_content_type, read_upload_limited
 from app.inference import predict_with
 from app.schemas.chat import ChatMessageRequest, ChatMessageResponse
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
@@ -131,7 +132,7 @@ def _build_messages(
 # ---------------------------
 
 
-@router.post("/chat:message", response_model=ChatMessageResponse)
+@router.post("/chat/message", response_model=ChatMessageResponse)
 def chat_message(req: ChatMessageRequest) -> ChatMessageResponse:
     normalized_history = _normalize_history(req.history) if req.history else None
 
@@ -164,7 +165,7 @@ def chat_message(req: ChatMessageRequest) -> ChatMessageResponse:
 # ---------------------------
 
 
-@router.post("/chat:image", response_model=ChatMessageResponse)
+@router.post("/chat/image", response_model=ChatMessageResponse)
 async def chat_image(
     user_id: str = Form(...),
     session_id: str = Form(...),
@@ -183,7 +184,8 @@ async def chat_image(
     # Decode image
     t_img0 = time.time()
     try:
-        img_bytes = await image.read()
+        validate_content_type(image)
+        img_bytes = await read_upload_limited(image)
         img = Image.open(io.BytesIO(img_bytes)).convert("RGB")
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Invalid image file: {str(e)}")
