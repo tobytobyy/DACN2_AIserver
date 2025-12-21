@@ -8,6 +8,7 @@ class ModelState:
     classes: Optional[list[str]] = None
     preprocess: Optional[Any] = None
     model_version: str = "unknown"
+    error: Optional[str] = None
 
 
 model_state = ModelState()

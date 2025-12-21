@@ -5,10 +5,11 @@ from typing import List, Dict, Tuple, Any
 import timm
 import torch
 from PIL import Image
+from app.core.settings import settings
 from torchvision import transforms
 
 # Đường dẫn: DACN2_AIserver/artifacts
-ARTIFACTS_DIR = Path(__file__).resolve().parents[2] / "artifacts"
+ARTIFACTS_DIR = Path(settings.artifacts_dir).resolve()
 
 
 def load_artifacts() -> Tuple[dict, list[str]]:

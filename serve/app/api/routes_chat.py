@@ -187,8 +187,12 @@ async def chat_image(
         validate_content_type(image)
         img_bytes = await read_upload_limited(image)
         img = Image.open(io.BytesIO(img_bytes)).convert("RGB")
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Invalid image file: {str(e)}")
+        raise HTTPException(
+            status_code=400, detail=f"Invalid image file: {str(e)}"
+        ) from e
 
     # MVP image analysis using existing food model (but from model_state)
     try:
