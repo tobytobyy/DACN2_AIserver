@@ -8,9 +8,8 @@ from typing import Any, Dict, List, Optional
 from PIL import Image
 from app.core.groq_client import call_groq_chat
 from app.core.prompts import SYSTEM_PROMPT
-from app.inference import (
-    predict as food_predict,
-)  # MVP image findings via existing food model
+from app.core.state import model_state
+from app.inference import predict_with
 from app.schemas.chat import ChatMessageRequest, ChatMessageResponse
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 
@@ -134,15 +133,6 @@ def _build_messages(
 
 @router.post("/chat:message", response_model=ChatMessageResponse)
 def chat_message(req: ChatMessageRequest) -> ChatMessageResponse:
-    """
-    Spring Boot should send:
-      - message
-      - user_context (optional JSON)
-      - history (optional list of {role, content})
-      - conversation_summary (optional)
-    AIserver returns answer + meta (Spring stores both).
-    """
-    # Normalize/validate history (even if Pydantic already validated, handle variants)
     normalized_history = _normalize_history(req.history) if req.history else None
 
     messages = _build_messages(
@@ -154,7 +144,6 @@ def chat_message(req: ChatMessageRequest) -> ChatMessageResponse:
         locale=req.locale or "vi",
     )
 
-    # Canonical Groq call (retry/timeout/meta live in groq_client.py)
     answer, llm_meta = call_groq_chat(messages=messages)
 
     meta: Dict[str, Any] = {
@@ -186,17 +175,6 @@ async def chat_image(
     locale: str = Form("vi"),
     image: UploadFile = File(...),
 ) -> ChatMessageResponse:
-    """
-    Spring Boot sends multipart/form-data:
-      - user_id, session_id
-      - message (optional)
-      - user_context (JSON string)
-      - history (JSON string)
-      - conversation_summary (optional)
-      - image (file)
-
-    MVP image pipeline: uses existing food classifier to generate image_findings.
-    """
     # Parse JSON fields safely
     uc = _safe_json_loads(user_context, "user_context")
     hist_raw = _safe_json_loads(history, "history")
@@ -210,24 +188,30 @@ async def chat_image(
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Invalid image file: {str(e)}")
 
-    # MVP image analysis using existing food model
-    # (If later you add general vision model, replace this block)
+    # MVP image analysis using existing food model (but from model_state)
     try:
-        preds = food_predict(img, top_k=3)
+        if (
+            model_state.model is None
+            or model_state.preprocess is None
+            or model_state.classes is None
+        ):
+            raise RuntimeError("Model not loaded")
+
+        preds = predict_with(
+            model_state.model, model_state.preprocess, model_state.classes, img, top_k=3
+        )
         image_findings: Dict[str, Any] = {
             "type": "food_classification",
             "food_predictions": preds,
             "image_latency_ms": int((time.time() - t_img0) * 1000),
         }
     except Exception as e:
-        # Don't hard fail if image model breaks; still allow chat to proceed with a note
         image_findings = {
             "type": "food_classification",
             "error": f"food_predict_failed: {str(e)}",
             "image_latency_ms": int((time.time() - t_img0) * 1000),
         }
 
-    # Build messages and call Groq
     messages = _build_messages(
         message=message or "Hãy phân tích ảnh và đưa gợi ý.",
         history=hist,

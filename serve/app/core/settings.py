@@ -2,7 +2,6 @@ from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-# settings.py nằm ở: serve/app/core/settings.py
 # parents[2] => serve/
 BASE_DIR = Path(__file__).resolve().parents[2]
 
