@@ -23,12 +23,16 @@ Output rules (VERY IMPORTANT):
 def build_messages(
     user_message: str, user_context: Dict[str, Any], analyzed_image: Dict[str, Any]
 ) -> List[Dict[str, str]]:
+    hint = (analyzed_image.get("details") or {}).get("routing_hint", "generic")
+
     if analyzed_image.get("is_food"):
         preds = (analyzed_image.get("details") or {}).get("food_predictions", [])
-        vision_context = f"IMAGE_TYPE=FOOD; predictions={preds}"
+        vision_context = f"ROUTING_HINT={hint}; IMAGE_TYPE=FOOD; predictions={preds}"
     else:
         sc = (analyzed_image.get("details") or {}).get("structured_context", "")
-        vision_context = f"IMAGE_TYPE=NON_FOOD; structured_context_en={sc}"
+        vision_context = (
+            f"ROUTING_HINT={hint}; IMAGE_TYPE=NON_FOOD; structured_context_en={sc}"
+        )
 
     user_block = f"""USER_MESSAGE: {user_message}
 
@@ -80,4 +84,11 @@ class LLMEngine:
     ) -> Tuple[str, str]:
         messages = build_messages(user_message, user_context, analyzed_image)
         raw = await self.client.chat(messages, temperature=0.2)
-        return parse_llm_json(raw)
+
+        try:
+            return parse_llm_json(raw)
+        except Exception:
+            safe_text = raw.strip()
+            if not safe_text:
+                safe_text = "Mình chưa đủ thông tin để trả lời. Bạn có thể mô tả rõ hơn giúp mình không?"
+            return "unknown", safe_text

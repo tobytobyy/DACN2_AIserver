@@ -36,10 +36,10 @@ class FoodPipeline:
             )
 
         detected_items = [p["label"] for p in preds]
-        confidence = float(preds[0]["score"]) if preds else None
+        food_top1_score = float(preds[0]["score"]) if preds else None
 
         return {
             "detected_items": detected_items,
-            "confidence": confidence,
+            "food_top1_score": food_top1_score,
             "food_predictions": normalized,
         }

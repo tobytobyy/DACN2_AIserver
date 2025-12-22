@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Depends, Request, HTTPException, status
+from fastapi import APIRouter, Depends, Request
 
 from app.core.fetch_image import fetch_image_from_url
 from app.core.security import verify_internal_token
-from app.core.state import model_state
 from app.domain.actions import build_suggested_actions
+from app.domain.guardrails import apply_guardrails
+from app.domain.routing_hint import to_routing_hint
 from app.schemas.inference import (
     InferenceRequest,
     InferenceResponse,
@@ -18,59 +19,77 @@ router = APIRouter(prefix="/api/v1/inference", tags=["inference"])
 async def chat(
     req: InferenceRequest, request: Request, _=Depends(verify_internal_token)
 ):
-    if (
-        model_state.error
-        or model_state.clip_model is None
-        or model_state.blip_vqa_model is None
-    ):
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Models not ready"
-        )
-
-    # fetch image if provided
+    # defaults (important to avoid UnboundLocalError)
     decision = None
-    details = {}
     detected_items = []
-    confidence = None
+    details = {}
 
+    router_food_score = None
+    router_best_label = None
+    router_best_label_score = None
+    routing_hint = "generic"  # deafault if no image
+
+    # if req.image_url is available, do vision analysis
+    # if False, skip vision analysis and go to LLM directly
     if req.image_url:
         image = await fetch_image_from_url(req.image_url)
 
         router_service = request.app.state.vision_router
-
         decision = router_service.route(image)
 
+        router_food_score = decision.food_score
+        router_best_label = decision.best_label
+        router_best_label_score = decision.best_score
+        routing_hint = to_routing_hint(
+            is_food=decision.is_food, best_label=router_best_label
+        )
+
         if decision.is_food:
-            food_pipeline = request.app.state.food_pipeline
-            fp = food_pipeline.analyze(image, top_k=3)
-
+            fp = request.app.state.food_pipeline.analyze(image, top_k=3)
             detected_items = fp["detected_items"]
-            confidence = fp["confidence"]
-
-            details = {"food_predictions": fp.get("food_predictions", [])}
-
-        else:
-            health_pipeline = request.app.state.health_pipeline
-            hp = health_pipeline.analyze(
-                image, clip_best_label=decision.best_label or ""
+            details.update(
+                {
+                    "food_predictions": fp["food_predictions"],
+                    "food_top1_score": fp["food_top1_score"],
+                }
             )
-            details = {
-                "structured_context": hp["structured_context"],
-                "vqa_answers": hp["vqa_answers"],
-            }
+        else:
+            hp = request.app.state.health_pipeline.analyze(
+                image, clip_best_label=router_best_label or ""
+            )
+            details.update(
+                {
+                    "structured_context": hp["structured_context"],
+                    "vqa_answers": hp["vqa_answers"],
+                }
+            )
+
+    # populate details
+    details.update(
+        {
+            "routing_hint": routing_hint,
+            "router_food_score": router_food_score,
+            "router_best_label_score": router_best_label_score,
+        }
+    )
 
     analyzed = VisionAnalysis(
-        is_food=decision.is_food if decision else False,
+        is_food=bool(decision.is_food) if decision else False,
         detected_items=detected_items,
-        nutrition_facts={},  # chưa làm
-        confidence=(
-            confidence
-            if decision and decision.is_food
-            else (decision.food_score if decision else None)
-        ),
-        detected_label=decision.best_label if decision else None,
+        nutrition_facts={},
+        confidence=router_food_score,  # theo chuẩn B bạn chốt
+        detected_label=router_best_label,
         details=details,
     )
+
+    # call LLM to generate intent and text response
+    llm = request.app.state.llm_engine
+    intent, text = await llm.generate_intent_and_text(
+        user_message=req.message,
+        user_context=req.user_context.model_dump(),
+        analyzed_image=analyzed.model_dump(),
+    )
+    text = apply_guardrails(intent=intent, user_message=req.message, text_response=text)
 
     actions = build_suggested_actions(
         is_food=analyzed.is_food,
@@ -78,21 +97,6 @@ async def chat(
         food_predictions=(analyzed.details or {}).get("food_predictions"),
     )
 
-    llm = request.app.state.llm_engine
-
-    try:
-        intent, text = await llm.generate_intent_and_text(
-            user_message=req.message,
-            user_context=req.user_context.model_dump(),
-            analyzed_image=analyzed.model_dump(),
-        )
-    except Exception:
-        # Nếu LLM local chết / Ollama chưa chạy => 503
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="LLM not available"
-        )
-
-    # stub text_response
     data = InferenceData(
         text_response=text,
         intent_detected=intent,
