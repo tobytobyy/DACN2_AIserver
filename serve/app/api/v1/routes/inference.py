@@ -1,3 +1,4 @@
+from app.schemas.food_image import FoodImageRequest, FoodImageResponse
 from fastapi import APIRouter, Depends, Request
 
 from app.core.fetch_image import fetch_image_from_url
@@ -12,6 +13,44 @@ from app.schemas.inference import (
 )
 
 router = APIRouter(prefix="/api/v1/inference", tags=["inference"])
+
+
+@router.post("/food-image", response_model=FoodImageResponse)
+async def food_image(
+    req: FoodImageRequest, request: Request, _=Depends(verify_internal_token)
+):
+    # 1) fetch image (includes 5MB limit + content-type checks)
+    image = await fetch_image_from_url(req.image_url)
+
+    # 2) route via CLIP (food vs non-food)
+    router_service = request.app.state.vision_router
+    decision = router_service.route(image)
+
+    if not decision.is_food:
+        return FoodImageResponse(
+            status="success",
+            is_food=False,
+            message="Cannot identify this image as food. Please submit a food image.",
+            predictions=[],
+        )
+
+    # 3) run food model top_k=3
+    food_pipeline = request.app.state.food_pipeline
+    fp = food_pipeline.analyze(image, top_k=3)
+
+    # fp["food_predictions"] includes rank/label/score/source :contentReference[oaicite:5]{index=5}
+    # Convert to the original simple format: [{label, score}, ...]
+    predictions = [
+        {"label": p["label"], "score": float(p["score"])}
+        for p in fp["food_predictions"]
+    ]
+
+    return FoodImageResponse(
+        status="success",
+        is_food=True,
+        message="OK",
+        predictions=predictions,
+    )
 
 
 @router.post("/chat", response_model=InferenceResponse)
