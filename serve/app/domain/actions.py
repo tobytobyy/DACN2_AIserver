@@ -7,10 +7,6 @@ def build_suggested_actions(
     session_id: str,
     food_predictions: List[Dict[str, Any]] | None = None,
 ) -> List[Dict[str, Any]]:
-    # Suggested action to add food to nutrition log
-    # Only if the image is classified as food
-    # if not is_food or not food_predictions:
-    #     ️ return []
     if not is_food:
         return []
 

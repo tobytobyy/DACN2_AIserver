@@ -16,17 +16,33 @@ from app.inference import load_artifacts, build_model, build_preprocess
 
 
 def pick_device() -> str:
-    if settings.DEVICE in {"cpu", "mps"}:
-        return settings.DEVICE
-    # auto
-    return "mps" if torch.backends.mps.is_available() else "cpu"
+    """
+    Device policy:
+    - DEVICE=cuda: use CUDA if available, else fallback cpu
+    - DEVICE=mps:  use MPS if available, else fallback cpu
+    - DEVICE=cpu:  force cpu
+    - DEVICE=auto: prefer cuda -> mps -> cpu
+    """
+    dev = settings.DEVICE
 
-    # if settings.DEVICE == "cuda":
-    #     return "cuda"
-    # if settings.DEVICE == "cpu":
-    #     return "cpu"
-    # # auto
-    # return "cuda" if torch.cuda.is_available() else "cpu"
+    # Helper: safe check MPS (torch.backends.mps may not exist on non-mac builds)
+    has_mps = hasattr(torch.backends, "mps") and torch.backends.mps.is_available()
+
+    if dev == "cpu":
+        return "cpu"
+
+    if dev == "cuda":
+        return "cuda" if torch.cuda.is_available() else "cpu"
+
+    if dev == "mps":
+        return "mps" if has_mps else "cpu"
+
+    # auto
+    if torch.cuda.is_available():
+        return "cuda"
+    if has_mps:
+        return "mps"
+    return "cpu"
 
 
 @asynccontextmanager

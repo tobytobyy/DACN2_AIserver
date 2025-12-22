@@ -26,7 +26,7 @@ class Settings(BaseModel):
     VQA_MAX_QUESTIONS: int = int(os.getenv("VQA_MAX_QUESTIONS", "6"))
 
     # Device
-    DEVICE: str = os.getenv("DEVICE", "auto").lower()  # auto | cuda | cpu
+    DEVICE: str = os.getenv("DEVICE", "auto").lower()  # auto | cuda | mps | cpu
 
     # Ollama LLM
     OLLAMA_BASE_URL: str = os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434")

@@ -4,7 +4,5 @@ pillow
 torch
 torchvision
 timm
-python-dotenv
-pydantic-settings
 transformers
 httpx
