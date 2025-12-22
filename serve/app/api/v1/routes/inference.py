@@ -3,7 +3,6 @@ from fastapi import APIRouter, Depends, Request
 from app.core.fetch_image import fetch_image_from_url
 from app.core.security import verify_internal_token
 from app.domain.actions import build_suggested_actions
-from app.domain.guardrails import apply_guardrails
 from app.domain.routing_hint import to_routing_hint
 from app.schemas.inference import (
     InferenceRequest,
@@ -77,7 +76,7 @@ async def chat(
         is_food=bool(decision.is_food) if decision else False,
         detected_items=detected_items,
         nutrition_facts={},
-        confidence=router_food_score,  # theo chuẩn B bạn chốt
+        confidence=router_food_score,
         detected_label=router_best_label,
         details=details,
     )
@@ -89,7 +88,6 @@ async def chat(
         user_context=req.user_context.model_dump(),
         analyzed_image=analyzed.model_dump(),
     )
-    text = apply_guardrails(intent=intent, user_message=req.message, text_response=text)
 
     actions = build_suggested_actions(
         is_food=analyzed.is_food,

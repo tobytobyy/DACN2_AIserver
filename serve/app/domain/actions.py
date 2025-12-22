@@ -13,7 +13,7 @@ def build_suggested_actions(
     return [
         {
             "type": "BUTTON",
-            "label": "Thêm vào nhật ký dinh dưỡng",
+            "label": "Add to nutrition log",
             "action_api": "/api/user/nutrition/log",
             "payload": {
                 "session_id": session_id,

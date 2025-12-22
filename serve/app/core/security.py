@@ -1,12 +1,11 @@
-from app.core.config import settings
 from fastapi import Header, HTTPException, status
+
+from app.core.config import settings
 
 
 # if ENV=dev/local: bypass security
 # if ENV!=dev/local: enforce security by checking INTERNAL_TOKEN in headers
 # if INTERNAL_TOKEN is not set: 500 error (misconfiguration)
-
-
 async def verify_internal_token(x_internal_token: str = Header(default="")) -> None:
     # Dev bypass
     if settings.is_dev:
