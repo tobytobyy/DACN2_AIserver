@@ -1,13 +1,25 @@
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any, Optional, List
 
 
 @dataclass
 class ModelState:
+    # food model
     model: Optional[Any] = None
-    classes: Optional[list[str]] = None
     preprocess: Optional[Any] = None
-    model_version: str = "unknown"
+    classes: Optional[List[str]] = None
+
+    # clip router
+    clip_model: Optional[Any] = None
+    clip_processor: Optional[Any] = None
+
+    # blip vqa
+    blip_vqa_model: Optional[Any] = None
+    blip_vqa_processor: Optional[Any] = None
+
+    # device
+    device: str = "cpu"
+
     error: Optional[str] = None
 
 

@@ -5,8 +5,9 @@ from typing import List, Dict, Tuple, Any
 import timm
 import torch
 from PIL import Image
-from app.core.settings import settings
 from torchvision import transforms
+
+from app.core.settings import settings
 
 # Đường dẫn: DACN2_AIserver/artifacts
 ARTIFACTS_DIR = Path(settings.artifacts_dir).resolve()
@@ -103,10 +104,18 @@ def predict_with(
     top_k = max(1, min(int(top_k), len(classes)))
 
     x = preprocess(image.convert("RGB")).unsqueeze(0)
+
+    # move input to model device
+    device = next(model.parameters()).device
+    x = x.to(device)
+
     with torch.inference_mode():
         out = model(x)
         prob = torch.softmax(out, dim=1)[0]
-        scores, idxs = torch.topk(prob, k=top_k)
+
+    # move prob to cpu and detach
+    prob = prob.detach().cpu()
+    scores, idxs = torch.topk(prob, k=top_k)
 
     return [
         {"label": classes[i], "score": float(s)}

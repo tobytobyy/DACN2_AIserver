@@ -1,4 +1,4 @@
-<type>(<scope>): <short summary>
+#<type>(<scope>): <short summary>
 
 # ----------------------------
 # Type (required):
