@@ -4,8 +4,7 @@ pillow
 torch
 torchvision
 timm
-python-multipart
-openai
 python-dotenv
 pydantic-settings
 transformers
+httpx

@@ -7,9 +7,9 @@ import torch
 from PIL import Image
 from torchvision import transforms
 
-from app.core.settings import settings
+from app.core.config import settings
 
-# Đường dẫn: DACN2_AIserver/artifacts
+# Link: DACN2_AIserver/artifacts
 ARTIFACTS_DIR = Path(settings.artifacts_dir).resolve()
 
 
@@ -79,7 +79,6 @@ def build_model(cfg: dict) -> torch.nn.Module:
 
     state = torch.load(weights_path, map_location=device)
 
-    # Nếu checkpoint của bạn có dạng {"state_dict": ...} thì mở comment dưới:
     # if isinstance(state, dict) and "state_dict" in state:
     #     state = state["state_dict"]
 

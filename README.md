@@ -1,27 +1,35 @@
 serve/app/
-main.py # giữ lifespan load food model (đang tốt)
+main.py
+
 api/
-routes_food.py # giữ /v1/food/predict (dev/debug)
-routes_chat.py # giữ demo endpoints (dev/debug)
-routes_inference.py # NEW: /api/v1/inference/chat (canonical)
-schemas/
-chat.py # đang có (demo)
-inference.py # NEW: request/response theo spec
+v1/
+routes/
+inference.py # POST /api/v1/inference/chat
+
 core/
-state.py # giữ model_state
-prompts.py # giữ SYSTEM_PROMPT, bổ sung system prompts theo spec
-security.py # NEW: verify X-Internal-Token
-fetch_image.py # NEW: download image_url async + validate
+config.py # ONE settings system (ENV, tokens, thresholds, ollama, artifacts_dir)
+security.py # verify X-Internal-Token (dev bypass)
+fetch_image.py # image_url fetch + 5MB + content-type
+locale.py # detect_vi(), choose_locale()
+errors.py # centralized error codes mapping (nếu bạn đang dùng)
+logging.py # (optional) request_id
+
 domain/
-orchestrator.py # NEW: router -> pipeline -> llm -> response
-vision_router.py # NEW: CLIP route
-food_pipeline.py # NEW: reuse predict_with + enrich nutrition
-health_pipeline.py # NEW: BLIP/VQA caption
-llm_engine.py # NEW: local-first + fallback groq
-guardrails.py # NEW: keyword filter + disclaimer + triage
+food_pipeline.py
+health_pipeline.py
+vision_router_service.py
+llm_engine.py
+guardrails.py
+actions.py
+routing_hint.py
+vqa_questions.py
+llm_intents.py
+
 infra/
-spring_client.py # NEW: httpx async
-clip_router.py # NEW
-blip_vqa.py # NEW
-llm_runtime.py # NEW: ollama/llama-cpp wrapper
-inference.py # giữ (food model)
+clip_router.py
+blip_vqa.py
+llm_ollama.py
+translator_ollama.py # option
+
+schemas/
+inference.py

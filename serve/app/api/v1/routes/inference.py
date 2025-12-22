@@ -27,7 +27,7 @@ async def chat(
     router_food_score = None
     router_best_label = None
     router_best_label_score = None
-    routing_hint = "generic"  # deafault if no image
+    routing_hint = "no_image"  # deafault if no image
 
     # if req.image_url is available, do vision analysis
     # if False, skip vision analysis and go to LLM directly

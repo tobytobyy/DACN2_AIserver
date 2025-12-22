@@ -1,9 +1,13 @@
 import os
+from pathlib import Path
 
 from pydantic import BaseModel
 
-
 # Read token from ENV variable: INTERNAL_TOKEN
+
+# parents[2] => serve/
+BASE_DIR = Path(__file__).resolve().parents[2]
+artifacts_dir: str = str(BASE_DIR.parent / "artifacts")  # DACN2_AIserver/artifacts
 
 
 class Settings(BaseModel):
@@ -28,6 +32,9 @@ class Settings(BaseModel):
     OLLAMA_BASE_URL: str = os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434")
     OLLAMA_MODEL: str = os.getenv("OLLAMA_MODEL", "llama3.2:3b")
     OLLAMA_TIMEOUT_S: float = float(os.getenv("OLLAMA_TIMEOUT_S", "30"))
+
+    # Artifacts dir
+    artifacts_dir: str = artifacts_dir
 
     @property
     def is_dev(self) -> bool:
