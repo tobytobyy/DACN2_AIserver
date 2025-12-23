@@ -1,0 +1,26 @@
+services:
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama:/root/.ollama
+
+  aiserver:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      ENV: "prod"
+      INTERNAL_TOKEN: "your_token"
+      DEVICE: "auto"
+      OLLAMA_BASE_URL: "http://ollama:11434"
+      OLLAMA_MODEL: "llama3.2:3b"
+    volumes:
+      - hf_cache:/cache/huggingface
+    depends_on:
+      - ollama
+
+volumes:
+  ollama:
+  hf_cache:

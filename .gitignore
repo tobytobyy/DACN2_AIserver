@@ -1,6 +1,40 @@
-.idea/
-*.iml
-__pycache__/
-*.pyc
+# --- Docker / Compose ---
 .env
+.env.*
+docker-compose.override.yml
+
+# Optional: local bind-mount data
+data/
+logs/
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+pip-wheel-metadata/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.pyre/
+.coverage
+htmlcov/
+
+# --- OS / editor ---
 .DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# --- ML / HuggingFace / Torch caches  ---
+.cache/
+hf_cache/
+wandb/
+mlruns/
+*.pt.ckpt
+*.onnx
