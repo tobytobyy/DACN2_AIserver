@@ -3,7 +3,7 @@ from typing import Dict, Any
 from PIL import Image
 
 from app.core.state import model_state
-from app.inference import predict_with
+from app.infra.predict_food import predict_with
 
 
 class FoodPipeline:

@@ -29,7 +29,7 @@ LABEL_PROMPTS: Dict[str, str] = {
 @dataclass
 class RouteDecision:
     """
-    best_label is a STABLE KEY (e.g., 'medicine'), not the raw prompt.
+    best_key is a STABLE KEY (e.g., 'medicine'), not the raw prompt.
     """
 
     is_food: bool

@@ -14,7 +14,7 @@ from app.domain.food_pipeline import FoodPipeline
 from app.domain.health_pipeline import HealthPipeline
 from app.domain.llm_engine import LLMEngine
 from app.domain.vision_router_service import VisionRouterService
-from app.inference import load_artifacts, build_model, build_preprocess
+from app.infra.predict_food import load_artifacts, build_model, build_preprocess
 
 
 def pick_device() -> str:

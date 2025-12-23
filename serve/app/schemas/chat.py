@@ -15,7 +15,7 @@ class UserContext(BaseModel):
     medical_conditions: List[str] = Field(default_factory=list)
 
 
-class InferenceRequest(BaseModel):
+class ChatRequest(BaseModel):
     session_id: str
     message: str
     image_url: Optional[str] = None
@@ -38,13 +38,13 @@ class SuggestedAction(BaseModel):
     payload: Dict[str, Any] = Field(default_factory=dict)
 
 
-class InferenceData(BaseModel):
+class ChatData(BaseModel):
     text_response: str
     intent_detected: Optional[str] = None
     analyzed_image: VisionAnalysis
     suggested_actions: List[SuggestedAction] = Field(default_factory=list)
 
 
-class InferenceResponse(BaseModel):
+class ChatResponse(BaseModel):
     status: str
-    data: InferenceData
+    data: ChatData

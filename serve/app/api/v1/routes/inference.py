@@ -10,13 +10,13 @@ from app.core.readiness import (
 from app.core.security import verify_internal_token
 from app.domain.actions import build_suggested_actions
 from app.domain.routing_hint import to_routing_hint
-from app.schemas.food_image import FoodImageRequest, FoodImageResponse
-from app.schemas.inference import (
-    InferenceRequest,
-    InferenceResponse,
-    InferenceData,
+from app.schemas.chat import (
+    ChatRequest,
+    ChatResponse,
+    ChatData,
     VisionAnalysis,
 )
+from app.schemas.food_image import FoodImageRequest, FoodImageResponse
 
 router = APIRouter(prefix="/api/v1/inference", tags=["inference"])
 
@@ -63,9 +63,9 @@ async def food_image(
     )
 
 
-@router.post("/chat", response_model=InferenceResponse)
+@router.post("/chat", response_model=ChatResponse)
 async def chat(
-    req: InferenceRequest,
+    req: ChatRequest,
     request: Request,
     _=Depends(verify_internal_token),
     __=Depends(require_llm_ready),
@@ -109,7 +109,7 @@ async def chat(
         else:
             try:
                 await require_blip_ready()
-                hp = request.app.state.health_pipeline.analyze(
+                hp = await request.app.state.health_pipeline.analyze(
                     image, clip_best_key=router_best_key or ""
                 )
             except AttributeError as e:
@@ -127,7 +127,7 @@ async def chat(
             except Exception as e:
                 # Any other BLIP/VQA-related failure -> 503 for ops visibility
                 raise HTTPException(
-                    status_code=500,
+                    status_code=503,
                     detail=f"BLIP-VQA failed: {str(e)}",
                 ) from e
             details.update(
@@ -169,10 +169,10 @@ async def chat(
         food_predictions=(analyzed.details or {}).get("food_predictions"),
     )
 
-    data = InferenceData(
+    data = ChatData(
         text_response=text,
         intent_detected=intent,
         analyzed_image=analyzed,
         suggested_actions=actions,
     )
-    return InferenceResponse(status="success", data=data)
+    return ChatResponse(status="success", data=data)
