@@ -1,10 +1,16 @@
-from app.schemas.food_image import FoodImageRequest, FoodImageResponse
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Request, HTTPException
 
 from app.core.fetch_image import fetch_image_from_url
+from app.core.readiness import (
+    require_clip_ready,
+    require_food_ready,
+    require_llm_ready,
+    require_blip_ready,
+)
 from app.core.security import verify_internal_token
 from app.domain.actions import build_suggested_actions
 from app.domain.routing_hint import to_routing_hint
+from app.schemas.food_image import FoodImageRequest, FoodImageResponse
 from app.schemas.inference import (
     InferenceRequest,
     InferenceResponse,
@@ -17,12 +23,16 @@ router = APIRouter(prefix="/api/v1/inference", tags=["inference"])
 
 @router.post("/food-image", response_model=FoodImageResponse)
 async def food_image(
-    req: FoodImageRequest, request: Request, _=Depends(verify_internal_token)
+    req: FoodImageRequest,
+    request: Request,
+    _=Depends(verify_internal_token),
+    __=Depends(require_clip_ready),
+    ___=Depends(require_food_ready),
 ):
-    # 1) fetch image (includes 5MB limit + content-type checks)
+    # 1) fetch image (includes 5MB limit and content-type checks)
     image = await fetch_image_from_url(req.image_url)
 
-    # 2) route via CLIP (food vs non-food)
+    # 2) route via CLIP (food and non-food)
     router_service = request.app.state.vision_router
     decision = router_service.route(image)
 
@@ -38,7 +48,7 @@ async def food_image(
     food_pipeline = request.app.state.food_pipeline
     fp = food_pipeline.analyze(image, top_k=3)
 
-    # fp["food_predictions"] includes rank/label/score/source :contentReference[oaicite:5]{index=5}
+    # fp["food_predictions"] includes rank/label/score/source
     # Convert to the original simple format: [{label, score}, ...]
     predictions = [
         {"label": p["label"], "score": float(p["score"])}
@@ -55,7 +65,10 @@ async def food_image(
 
 @router.post("/chat", response_model=InferenceResponse)
 async def chat(
-    req: InferenceRequest, request: Request, _=Depends(verify_internal_token)
+    req: InferenceRequest,
+    request: Request,
+    _=Depends(verify_internal_token),
+    __=Depends(require_llm_ready),
 ):
     # defaults (important to avoid UnboundLocalError)
     decision = None
@@ -63,26 +76,28 @@ async def chat(
     details = {}
 
     router_food_score = None
-    router_best_label = None
-    router_best_label_score = None
-    routing_hint = "no_image"  # deafault if no image
+    router_best_key = None
+    router_best_key_score = None
+    routing_hint = "no_image"  # default if no image
 
     # if req.image_url is available, do vision analysis
     # if False, skip vision analysis and go to LLM directly
     if req.image_url:
+        require_clip_ready()
         image = await fetch_image_from_url(req.image_url)
 
         router_service = request.app.state.vision_router
         decision = router_service.route(image)
 
         router_food_score = decision.food_score
-        router_best_label = decision.best_label
-        router_best_label_score = decision.best_score
+        router_best_key = decision.best_key
+        router_best_key_score = decision.best_score
         routing_hint = to_routing_hint(
-            is_food=decision.is_food, best_label=router_best_label
+            is_food=decision.is_food, best_key=router_best_key
         )
 
         if decision.is_food:
+            require_food_ready()
             fp = request.app.state.food_pipeline.analyze(image, top_k=3)
             detected_items = fp["detected_items"]
             details.update(
@@ -92,9 +107,29 @@ async def chat(
                 }
             )
         else:
-            hp = request.app.state.health_pipeline.analyze(
-                image, clip_best_label=router_best_label or ""
-            )
+            try:
+                await require_blip_ready()
+                hp = request.app.state.health_pipeline.analyze(
+                    image, clip_best_key=router_best_key or ""
+                )
+            except AttributeError as e:
+                # health_pipeline not initialized (often due to BLIP init failure at startup)
+                raise HTTPException(
+                    status_code=503,
+                    detail="BLIP-VQA is not available (health pipeline not initialized).",
+                ) from e
+            except RuntimeError as e:
+                # BLIP-VQA not loaded / failed lazy init
+                raise HTTPException(
+                    status_code=503,
+                    detail=f"BLIP-VQA is not available: {str(e)}",
+                ) from e
+            except Exception as e:
+                # Any other BLIP/VQA-related failure -> 503 for ops visibility
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"BLIP-VQA failed: {str(e)}",
+                ) from e
             details.update(
                 {
                     "structured_context": hp["structured_context"],
@@ -107,7 +142,7 @@ async def chat(
         {
             "routing_hint": routing_hint,
             "router_food_score": router_food_score,
-            "router_best_label_score": router_best_label_score,
+            "router_best_key_score": router_best_key_score,
         }
     )
 
@@ -116,7 +151,7 @@ async def chat(
         detected_items=detected_items,
         nutrition_facts={},
         confidence=router_food_score,
-        detected_label=router_best_label,
+        detected_label=router_best_key,
         details=details,
     )
 

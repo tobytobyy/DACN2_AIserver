@@ -20,7 +20,6 @@ SYSTEM_PROMPT = """You are an AI Health & Nutrition Assistant.
 - The JSON must have exactly the following keys:
 {
   "intent_detected": "String. One of: [symptom_check, food_inquiry, food_logging, medication_question, medical_document, general_health, general_chat, unknown]",
-  "severity_level": "String. One of: [emergency, urgent, monitor, none]. (Use 'none' for general chat/food logging)",  
   "text_response": "String. The natural language reply to the user.
      - If intent is 'symptom_check' or 'medical_document', structure the text as:
        1) Summary & Assessment

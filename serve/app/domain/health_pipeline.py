@@ -3,18 +3,19 @@ from typing import Dict, List
 from PIL import Image
 
 from app.core.config import settings
+from app.domain.vision_router_service import MEDICINE_KEY, MED_REPORT_KEY
 from app.domain.vqa_questions import GENERIC, MEDICINE, MED_REPORT, WOUND, VQAQuestion
-from app.infra.blip_vqa import BlipVQA
+from app.infra.blip_vqa import BlipVQA, ensure_blip_loaded
 
 
-def select_questions(clip_best_label: str) -> List[str]:
+def select_questions(clip_best_key: str) -> List[str]:
     # 1) Generic questions always included
     pool: List[VQAQuestion] = list(GENERIC)
 
     # 2) add domain-specific questions
-    if clip_best_label == "medicine pills or blister pack":
+    if clip_best_key == MEDICINE_KEY:
         pool += MEDICINE
-    elif clip_best_label == "medical report document":
+    elif clip_best_key == MED_REPORT_KEY:
         pool += MED_REPORT
     else:
         pool += WOUND
@@ -65,11 +66,15 @@ def build_structured_context(answers: dict[str, str]) -> str:
 
 class HealthPipeline:
     def __init__(self):
-        self.vqa = BlipVQA()
+        self.vqa = None
 
-    def analyze(self, image: Image.Image, clip_best_label: str) -> Dict:
+    async def analyze(self, image: Image.Image, clip_best_key: str) -> Dict:
         # choosing questions based on CLIP's best guess
-        questions = select_questions(clip_best_label)
+        questions = select_questions(clip_best_key)
+
+        await ensure_blip_loaded()
+        if self.vqa is None:
+            self.vqa = BlipVQA()
 
         answers = self.vqa.ask_many(image, questions)
         context = build_structured_context(answers)

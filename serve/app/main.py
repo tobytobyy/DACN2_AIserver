@@ -2,7 +2,9 @@ from contextlib import asynccontextmanager
 
 import torch
 from fastapi import FastAPI
-from transformers import BlipForQuestionAnswering, BlipProcessor
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from transformers import CLIPModel, CLIPProcessor
 
 from app.api.v1.routes.inference import router as inference_router
@@ -67,17 +69,7 @@ async def lifespan(app: FastAPI):
         model_state.clip_model.eval()
         model_state.clip_model.to(device)
 
-        # 3) load BLIP VQA
-        model_state.blip_vqa_processor = BlipProcessor.from_pretrained(
-            settings.BLIP_VQA_MODEL_NAME
-        )
-        model_state.blip_vqa_model = BlipForQuestionAnswering.from_pretrained(
-            settings.BLIP_VQA_MODEL_NAME
-        )
-        model_state.blip_vqa_model.eval()
-        model_state.blip_vqa_model.to(device)
-
-        # 4) initialize domain services after model load
+        # 3) initialize domain services after model load
         app.state.food_pipeline = FoodPipeline()
         app.state.health_pipeline = HealthPipeline()
         app.state.vision_router = VisionRouterService()
@@ -92,11 +84,44 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="AI Inference Server", lifespan=lifespan)
 
 
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_handler(request, exc: StarletteHTTPException):
+    # Standardize to: {"status": "error", "error": "..."}
+    if isinstance(exc.detail, dict):
+        # if someone already passes dict, keep it
+        content = exc.detail
+        if "status" not in content:
+            content = {"status": "error", "error": content}
+    else:
+        content = {"status": "error", "error": str(exc.detail)}
+    return JSONResponse(status_code=exc.status_code, content=content)
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request, exc: RequestValidationError):
+    return JSONResponse(
+        status_code=422,
+        content={
+            "status": "error",
+            "error": "Validation error",
+            "detail": exc.errors(),
+        },
+    )
+
+
 @app.get("/health")
 def health():
     return {
         "status": "ok",
-        "model_loaded": model_state.model is not None,
+        "food_ready": model_state.model is not None
+        and model_state.preprocess is not None
+        and model_state.classes is not None,
+        "clip_ready": model_state.clip_model is not None
+        and model_state.clip_processor is not None,
+        "blip_ready": model_state.blip_vqa_model is not None
+        and model_state.blip_vqa_processor is not None,
+        "llm_ready": hasattr(app.state, "llm_engine")
+        and app.state.llm_engine is not None,
         "num_classes": len(model_state.classes) if model_state.classes else 0,
         "device": model_state.device,
         "error": model_state.error,

@@ -1,9 +1,42 @@
+import asyncio
 from typing import List, Dict
 
 import torch
 from PIL import Image
+from transformers import BlipForQuestionAnswering, BlipProcessor
 
+from app.core.config import settings
 from app.core.state import model_state
+
+_blip_load_lock = asyncio.Lock()
+
+
+async def ensure_blip_loaded() -> None:
+    """
+    Lazy-load BLIP-VQA the first time it is needed.
+    Safe under concurrency via asyncio lock.
+    """
+    if (
+        model_state.blip_vqa_model is not None
+        and model_state.blip_vqa_processor is not None
+    ):
+        return
+
+    async with _blip_load_lock:
+        # double-check inside lock
+        if (
+            model_state.blip_vqa_model is not None
+            and model_state.blip_vqa_processor is not None
+        ):
+            return
+
+        processor = BlipProcessor.from_pretrained(settings.BLIP_VQA_MODEL_NAME)
+        model = BlipForQuestionAnswering.from_pretrained(settings.BLIP_VQA_MODEL_NAME)
+        model.eval()
+        model.to(model_state.device)
+
+        model_state.blip_vqa_processor = processor
+        model_state.blip_vqa_model = model
 
 
 # BLIP-VQA inference class

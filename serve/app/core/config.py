@@ -18,6 +18,7 @@ class Settings(BaseModel):
     # CLIP
     CLIP_MODEL_NAME: str = os.getenv("CLIP_MODEL_NAME", "openai/clip-vit-base-patch32")
     FOOD_THRESHOLD: float = float(os.getenv("FOOD_THRESHOLD", "0.35"))
+    FOOD_MARGIN: float = float(os.getenv("FOOD_MARGIN", "0.02"))
 
     # BLIP VQA
     BLIP_VQA_MODEL_NAME: str = os.getenv(
